@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="VN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Christmas - Letter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Patrick+Hand&display=swap" rel="stylesheet">
+    
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000000; font-family: 'Times New Roman', serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; pointer-events: none;
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: space-between;
+            padding: 40px; box-sizing: border-box;
+        }
+
+        /* Start Screen */
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 200;
+            display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
+            transition: opacity 0.8s ease; backdrop-filter: blur(5px);
+        }
+        #btn-start {
+            background: transparent; color: #d4af37;
+            font-family: 'Times New Roman', serif; font-weight: bold; font-size: 28px; letter-spacing: 2px;
+            padding: 15px 50px; border: 1px solid #d4af37;
+            cursor: pointer; pointer-events: auto; transition: all 0.3s; text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
+        #btn-start:hover { background: #d4af37; color: #000; box-shadow: 0 0 40px rgba(212, 175, 55, 0.8); }
+
+        /* Guide Box */
+        .guide-box {
+            background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 20px; border-radius: 4px; color: #fceea7;
+            text-align: left; pointer-events: none; margin-bottom: 20px;
+        }
+        .guide-item { margin: 8px 0; font-size: 18px; display: flex; align-items: center; gap: 10px; font-style: italic; }
+
+        /* Webcam */
+        #webcam-wrapper {
+            position: absolute; top: 20px; right: 20px; width: 160px; height: 120px;
+            border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 4px; overflow: hidden; 
+            opacity: 0; transition: opacity 0.5s; z-index: 100; pointer-events: none;
+        }
+        #webcam-wrapper.active { opacity: 0.8; }
+        #camera-preview { width: 100%; height: 100%; transform: scaleX(-1); opacity: 0.7; }
+        
+        .status-text {
+            color: rgba(255,255,255,0.7); font-size: 16px; margin-top: 10px; 
+            text-transform: uppercase; letter-spacing: 2px; font-style: italic;
+        }
+        #selected-indicator {
+            color: #d4af37; font-weight: bold; font-size: 20px; margin-top: 5px; height: 30px;
+        }
+
+        /* Controls Buttons (Left Side) */
+        .control-group {
+            position: absolute; top: 20px; left: 20px; z-index: 200;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        
+        .control-btn {
+            width: 50px; height: 50px;
+            background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 50%;
+            color: #d4af37; font-size: 20px; cursor: pointer; 
+            display: flex; align-items: center; justify-content: center; 
+            transition: all 0.3s; pointer-events: auto;
+        }
+        .control-btn:hover { background: rgba(212, 175, 55, 0.8); color: #000; box-shadow: 0 0 15px #d4af37; }
+
+        /* --- BUTTON THƯ & HIỆU ỨNG RUNG --- */
+        @keyframes shake-notify {
+            0% { transform: rotate(0deg) scale(1); }
+            10% { transform: rotate(15deg) scale(1.1); }
+            20% { transform: rotate(-15deg) scale(1.1); }
+            30% { transform: rotate(10deg) scale(1.1); }
+            40% { transform: rotate(-10deg) scale(1.1); }
+            50% { transform: rotate(0deg) scale(1); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+
+        #btnLetter {
+            background: rgba(200, 0, 0, 0.8);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5);
+            animation: shake-notify 2s infinite ease-in-out;
+            position: relative;
+        }
+        
+        /* Chấm đỏ thông báo */
+        #btnLetter::after {
+            content: "1";
+            position: absolute; top: -5px; right: -5px;
+            background: red; color: white; width: 22px; height: 22px;
+            border-radius: 50%; font-size: 14px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); z-index: 10;
+        }
+        
+        #btnLetter.clicked { animation: none; background: rgba(0, 0, 0, 0.6); color: #d4af37; }
+        #btnLetter.clicked::after { display: none; }
+
+        /* --- [NEW] NOTE: CÓ NGƯỜI GỬI CHO CẬU NÈ --- */
+        #letter-note {
+            position: absolute;
+            left: 65px; /* Nằm bên phải nút */
+            top: 72px; /* Canh giữa theo chiều dọc với nút thư */
+            background: #fff;
+            color: #b30000;
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 2px solid #b30000;
+            font-family: 'Patrick Hand', cursive;
+            font-weight: bold;
+            font-size: 18px;
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            pointer-events: none; /* Không chặn click */
+            animation: float-note 2s infinite ease-in-out;
+            display: block; /* Mặc định hiện */
+        }
+
+        /* Mũi tên tam giác chỉ vào nút */
+        #letter-note::before {
+            content: "";
+            position: absolute; left: -8px; top: 50%;
+            transform: translateY(-50%);
+            border-width: 8px 8px 8px 0;
+            border-style: solid;
+            border-color: transparent #b30000 transparent transparent;
+        }
+
+        @keyframes float-note {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
+
+        /* --- LETTER MODAL STYLES (ĐÃ THU NHỎ) --- */
+        #letter-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 300;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: all 0.5s ease;
+            backdrop-filter: blur(8px);
+        }
+        #letter-modal.active { opacity: 1; visibility: visible; }
+        
+        .letter-content {
+            background: #fffdf5;
+            background-image: radial-gradient(#d4af37 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
+            /* --- [NEW] CẬP NHẬT KÍCH THƯỚC BÉ LẠI --- */
+            width: 85%; 
+            max-width: 420px; /* Giảm từ 550px xuống 420px */
+            padding: 40px 30px; /* Giảm padding để gọn gàng hơn */
+            
+            border-radius: 12px; position: relative;
+            transform: translateY(50px) scale(0.9); 
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 50px rgba(179, 0, 0, 0.4);
+            text-align: left; border: 4px solid #b30000; 
+            outline: 2px dashed #228b22; outline-offset: -10px;
+        }
+        #letter-modal.active .letter-content { transform: translateY(0) scale(1); }
+        
+        .letter-text { 
+            font-size: 20px; /* Giảm nhẹ size chữ cho phù hợp khung nhỏ (cũ là 24px) */
+            color: #2c2c2c; line-height: 1.5; 
+            font-family: 'Patrick Hand', cursive; 
+            position: relative; z-index: 2;
+        }
+        
+        .anim-line { opacity: 0; transform: translateY(15px); transition: opacity 1s ease, transform 1s ease; margin-bottom: 12px; }
+        .anim-line.visible { opacity: 1; transform: translateY(0); }
+        
+        .signature {
+            text-align: right; margin-top: 25px; 
+            font-weight: bold; color: #800000; 
+            font-size: 28px; /* Giảm size chữ ký */
+            font-family: 'Dancing Script', cursive; 
+        }
+
+        .letter-close { 
+            position: absolute; top: 10px; right: 15px; z-index: 10;
+            font-size: 24px; cursor: pointer; color: #b30000; transition: transform 0.3s;
+        }
+        .letter-close:hover { transform: rotate(90deg) scale(1.1); color: #ff0000; }
+        
+        .stamp {
+            position: absolute; bottom: 25px; right: 35px;
+            width: 60px; height: 60px; border: 3px double #b30000;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #b30000; font-weight: bold; transform: rotate(-15deg); opacity: 0.7;
+            font-size: 12px; letter-spacing: 1px;
+            box-shadow: inset 0 0 0 2px rgba(179, 0, 0, 0.1);
+            background: rgba(255,255,255,0.5);
+            font-family: 'Times New Roman', serif;
+        }
+
+        .deco-icon { position: absolute; z-index: 1; opacity: 0.9; }
+        .deco-tl { top: -20px; left: -20px; font-size: 45px; color: #228b22; transform: rotate(-20deg); text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .deco-br { bottom: -20px; right: -15px; font-size: 40px; color: #d4af37; transform: rotate(15deg); text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+
+        .spinner {
+            width: 40px; height: 40px; border: 2px solid rgba(212, 175, 55, 0.2); 
+            border-top: 2px solid #d4af37; border-radius: 50%; 
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+                "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/+esm"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div class="control-group">
+        <button id="btnCamToggle" class="control-btn" title="Bật/Tắt Camera">
+            <i class="fas fa-video"></i>
+        </button>
+        <button id="btnLetter" class="control-btn" title="Bạn có 1 thư mới">
+            <i class="fas fa-envelope"></i>
+        </button>
+        <div id="letter-note">Có người gửi cho cậu nè! 💌</div>
+    </div>
+
+    <div id="start-overlay">
+        <div id="loading-spinner" class="spinner"></div>
+        <div id="loading-text" style="color: #d4af37; margin-bottom: 20px; font-style: italic;">Đang tải phép màu...</div>
+        <button id="btn-start" style="display: none;">BẮT ĐẦU</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer">
+        <div style="text-align: center;">
+            <h1 style="color: #fceea7; font-size: 50px; margin: 0; text-shadow: 0 0 20px rgba(252,238,167,0.5); font-weight: normal; letter-spacing: 2px;">Noel Magic</h1>
+            <div class="status-text" id="status-display">Đang chờ camera...</div>
+            <div id="selected-indicator"></div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <div class="guide-box">
+                <div class="guide-item"><span>✊ <b>Nắm tay:</b> Cây Thông</span></div>
+                <div class="guide-item"><span>🖐 <b>Xòe tay:</b> Pháo hoa</span></div>
+                <div class="guide-item"><span>✌️ <b>Hi + Di chuyển:</b> Chọn Ảnh</span></div>
+                <div class="guide-item"><span>🫰 <b>Bắn tim:</b> Mưa tim</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="letter-modal">
+        <div class="letter-content">
+            <span class="letter-close">&times;</span>
+            
+            <i class="fas fa-holly-berry deco-icon deco-tl"></i> 
+            <i class="fas fa-bell deco-icon deco-br"></i> 
+            
+            <div class="letter-text" id="letter-container">
+                <p class="anim-line">Chào Thảo,</p>
+                <p class="anim-line">Là tớ, Tuấn Anh đây. Tớ viết những dòng này không phải để bào chữa, mà để đối diện với sự thật rằng tớ đã gây ra những điều không thể chấp nhận được với cậu và với cả chính bản thân tớ.</p>
+                <p class="anim-line">Những ngày qua là khoảng thời gian tớ tự nhìn nhận lại mọi thứ. Tớ biết lời xin lỗi lúc này có thể là chưa đủ, nhưng tớ vẫn muốn nói rằng tớ thực sự ân hận. Tớ đang nỗ lực từng ngày để sửa đổi, để trở thành một phiên bản tốt hơn.</p>
+                <p class="anim-line">Thảo à, tớ rất nhớ cậu. Nếu cậu còn tin tưởng dù chỉ một chút, mong cậu hãy cho tớ một cơ hội để chứng minh sự thay đổi đó. Tớ hy vọng chúng ta có thể bắt đầu lại, và tớ hứa sẽ không để cậu phải thất vọng thêm một lần nào nữa.</p>
+                <p class="anim-line">Tớ chờ câu trả lời từ cậu.</p>
+                <div class="anim-line signature">
+                    Tuấn Anh
+                </div>
+            </div>
+            <div class="stamp">NOEL</div>
+        </div>
+    </div>
+
+    <div id="webcam-wrapper">
+        <video id="webcam" autoplay playsinline style="display:none;"></video>
+        <canvas id="webcam-preview"></canvas>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'; 
+        import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+
+        // --- CẤU HÌNH ---
+        const CONFIG = {
+            colors: { bg: 0x000000, champagneGold: 0xffd966, deepGreen: 0x03180a, accentRed: 0x990000 },
+            particles: { count: 1500, dustCount: 2000, snowCount: 2000, heartCount: 500, treeHeight: 25, treeRadius: 8 },
+            camera: { z: 45 } 
+        };
+
+        const myImages = [
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMhzuXahLRUlxO9t5bp0Rjtapi0Lo73waFPg&s',
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcThDzk1HQLPIvvSkmO0gMzQmh3YUSK6P61QHg&s',
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcThSTbK7-t6aowOqvP78N21warxSkysFFVKpA&s',
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZCrvjzXDsO5AA6doCWPmsARp5UT-cQZAEyQ&s',
+            'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnFFMqcPV_LvbNQBwUmOIKBIFZ8XHj9MnU0w&s'
+        ];
+
+        const STATE = {
+            mode: 'TREE', focusTarget: null, hand: { detected: false, x: 0, y: 0 }, rotation: { x: 0, y: 0 } 
+        };
+
+        let scene, camera, renderer, composer, mainGroup, clock = new THREE.Clock();
+        let particleSystem = [], photoParticles = [], groupSnow, groupRainHearts;
+        let photoMeshGroup = new THREE.Group();
+        let handLandmarker, video, webcamCanvas, webcamCtx;
+        let caneTexture, audio;
+        let handRot = 0, selectedIndex = 0, pendingState = 'TREE', holdCount = 0;
+        let starMesh, starGlow;
+
+        async function init() {
+            initThree(); setupEnvironment(); setupLights(); createTextures();
+            createParticles(); createDust(); createSnow(); createHeartRain(); createStar3D();
+            setupPostProcessing(); setupEvents(); loadMyPhotos();
+            await initMediaPipe();
+            
+            document.getElementById('loading-spinner').style.display = 'none';
+            document.getElementById('loading-text').style.display = 'none';
+            const btnStart = document.getElementById('btn-start');
+            btnStart.style.display = 'block';
+            
+            btnStart.addEventListener('click', () => {
+                playMusic();
+                const overlay = document.getElementById('start-overlay');
+                overlay.style.opacity = 0;
+                setTimeout(() => overlay.remove(), 800);
+                animate();
+            });
+        }
+
+        function playMusic() {
+            audio = new Audio('imissyou.mp3'); 
+            audio.loop = true; audio.volume = 0.7;
+            audio.play().catch(e => console.log("Cần tương tác để phát nhạc:", e));
+        }
+
+        function initThree() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene(); scene.background = new THREE.Color(CONFIG.colors.bg);
+            scene.fog = new THREE.FogExp2(CONFIG.colors.bg, 0.015); 
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 2, CONFIG.camera.z); 
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ReinhardToneMapping; renderer.toneMappingExposure = 2.0; 
+            container.appendChild(renderer.domElement);
+            mainGroup = new THREE.Group(); scene.add(mainGroup);
+        }
+
+        function setupEnvironment() {
+            const pmremGenerator = new THREE.PMREMGenerator(renderer);
+            scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+        }
+
+        function setupLights() {
+            const ambient = new THREE.AmbientLight(0xffffff, 0.4); scene.add(ambient);
+            const innerLight = new THREE.PointLight(0xffaa00, 2, 20); innerLight.position.set(0, 5, 0); mainGroup.add(innerLight);
+            const spotGold = new THREE.SpotLight(0xffcc66, 800); spotGold.position.set(30, 40, 40); scene.add(spotGold);
+        }
+
+        function setupPostProcessing() {
+            const renderScene = new RenderPass(scene, camera);
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0.6; bloomPass.strength = 0.6; bloomPass.radius = 0.5;
+            composer = new EffectComposer(renderer); composer.addPass(renderScene); composer.addPass(bloomPass);
+        }
+
+        function createTextures() {
+            const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,128,128);
+            ctx.fillStyle = '#880000'; ctx.beginPath();
+            for(let i=-128; i<256; i+=32) { ctx.moveTo(i, 0); ctx.lineTo(i+32, 128); ctx.lineTo(i+16, 128); ctx.lineTo(i-16, 0); }
+            ctx.fill();
+            caneTexture = new THREE.CanvasTexture(canvas);
+            caneTexture.wrapS = THREE.RepeatWrapping; caneTexture.wrapT = THREE.RepeatWrapping; caneTexture.repeat.set(3, 3);
+        }
+
+        function createStar3D() {
+            const starShape = new THREE.Shape();
+            const outerRadius = 1.0; const innerRadius = 0.4; const spikes = 5;
+            for(let i=0; i<spikes*2; i++){
+                const r = (i%2 === 0) ? outerRadius : innerRadius;
+                const a = (i / (spikes*2)) * Math.PI * 2 + Math.PI/2;
+                if(i===0) starShape.moveTo(Math.cos(a)*r, Math.sin(a)*r);
+                else starShape.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+            }
+            starShape.closePath();
+            const geom = new THREE.ExtrudeGeometry(starShape, { depth: 0.3, bevelEnabled: true, bevelThickness: 0.1, bevelSize: 0.1, bevelSegments: 2 });
+            starMesh = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({ color: 0xFFD700 }));
+            starMesh.position.y = CONFIG.particles.treeHeight / 2 + 0.5; 
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xFFDD44, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending });
+            starGlow = new THREE.Mesh(new THREE.ExtrudeGeometry(starShape, { depth: 0.4, bevelEnabled: true, bevelThickness: 0.2, bevelSize: 0.2 }), glowMat);
+            starMesh.add(starGlow); mainGroup.add(starMesh);
+        }
+
+        function createSnow() {
+            const geo = new THREE.BufferGeometry(); const pos = [];
+            for (let i = 0; i < CONFIG.particles.snowCount; i++) pos.push((Math.random() - 0.5) * 100, (Math.random() - 0.5) * 60 + 20, (Math.random() - 0.5) * 100);
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            const cvs = document.createElement('canvas'); cvs.width = 32; cvs.height = 32;
+            const ctx = cvs.getContext('2d');
+            const grd = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            grd.addColorStop(0, 'rgba(255,255,255,0.8)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grd; ctx.fillRect(0, 0, 32, 32);
+            const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, map: new THREE.CanvasTexture(cvs), transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
+            groupSnow = new THREE.Points(geo, mat); scene.add(groupSnow);
+        }
+
+        function createHeartRain() {
+            const geo = new THREE.BufferGeometry(); const pos = [];
+            for (let i = 0; i < CONFIG.particles.heartCount; i++) pos.push((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 60, (Math.random() - 0.5) * 50);
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            const cvs = document.createElement('canvas'); cvs.width = 64; cvs.height = 64;
+            const ctx = cvs.getContext('2d');
+            ctx.fillStyle = "#FF0055"; ctx.translate(32, 32); ctx.scale(2, 2);
+            const d = "M0 -10 C -10 -25 -25 -10 -10 5 L 0 15 L 10 5 C 25 -10 10 -25 0 -10 Z";
+            ctx.fill(new Path2D(d));
+            const mat = new THREE.PointsMaterial({ map: new THREE.CanvasTexture(cvs), size: 1.5, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+            groupRainHearts = new THREE.Points(geo, mat); scene.add(groupRainHearts);
+        }
+
+        class Particle {
+            constructor(mesh, type, isDust = false) {
+                this.mesh = mesh; this.type = type; this.isDust = isDust;
+                this.posTree = new THREE.Vector3(); this.posScatter = new THREE.Vector3();
+                this.baseScale = mesh.scale.x; 
+                this.spinSpeed = new THREE.Vector3((Math.random()-0.5)*2, (Math.random()-0.5)*2, (Math.random()-0.5)*2);
+                if(type === 'PHOTO') this.spinSpeed.multiplyScalar(0.1); 
+                this.calculatePositions();
+            }
+            calculatePositions() {
+                const h = CONFIG.particles.treeHeight; let t = Math.pow(Math.random(), 0.8); 
+                const y = (t * h) - (h/2);
+                let rMax = CONFIG.particles.treeRadius * (1.0 - t); if (rMax < 0.5) rMax = 0.5;
+                const angle = t * 50 * Math.PI + Math.random() * Math.PI; const r = rMax * (0.8 + Math.random() * 0.4); 
+                this.posTree.set(Math.cos(angle) * r, y, Math.sin(angle) * r);
+                let rScatter = this.isDust ? (12 + Math.random()*20) : (8 + Math.random()*15);
+                const theta = Math.random() * Math.PI * 2; const phi = Math.acos(2 * Math.random() - 1);
+                this.posScatter.set(rScatter * Math.sin(phi) * Math.cos(theta), rScatter * Math.sin(phi) * Math.sin(theta), rScatter * Math.cos(phi));
+            }
+            update(dt, mode, focusTargetMesh) {
+                let target = this.posTree; let scaleTarget = this.baseScale;
+                if (mode === 'SCATTER') target = this.posScatter;
+                else if (mode === 'PHOTO') {
+                    if (this.mesh === focusTargetMesh) {
+                        const desiredWorldPos = new THREE.Vector3(0, 5, 30);
+                        const invMatrix = new THREE.Matrix4().copy(mainGroup.matrixWorld).invert();
+                        target = desiredWorldPos.applyMatrix4(invMatrix); scaleTarget = 4.0; 
+                    } else target = this.posScatter;
+                }
+                const lerpSpeed = (mode === 'PHOTO' && this.mesh === focusTargetMesh) ? 4.0 : 2.0; 
+                this.mesh.position.lerp(target, lerpSpeed * dt);
+                if (mode === 'PHOTO' && this.mesh === focusTargetMesh) { this.mesh.lookAt(camera.position); this.mesh.rotation.z = 0; } 
+                else {
+                    if (mode === 'SCATTER' || mode === 'PHOTO') { this.mesh.rotation.x += this.spinSpeed.x * dt; this.mesh.rotation.y += this.spinSpeed.y * dt; } 
+                    else if (mode === 'TREE') { this.mesh.rotation.x = THREE.MathUtils.lerp(this.mesh.rotation.x, 0, dt); this.mesh.rotation.y += 0.5 * dt; }
+                }
+                if (this.isDust) {
+                    scaleTarget = this.baseScale * (0.8 + 0.4 * Math.sin(clock.elapsedTime * 4 + this.mesh.id));
+                    if (mode === 'TREE') scaleTarget = 0; 
+                }
+                this.mesh.scale.lerp(new THREE.Vector3(scaleTarget, scaleTarget, scaleTarget), 3*dt);
+            }
+        }
+
+        function createParticles() {
+            const sphereGeo = new THREE.SphereGeometry(0.5, 32, 32); const boxGeo = new THREE.BoxGeometry(0.55, 0.55, 0.55); 
+            const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0, -0.5, 0), new THREE.Vector3(0.1, 0.5, 0), new THREE.Vector3(0.3, 0.4, 0)]);
+            const candyGeo = new THREE.TubeGeometry(curve, 16, 0.08, 8, false);
+            const goldMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.champagneGold, metalness: 1.0, roughness: 0.1 });
+            const greenMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.deepGreen, metalness: 0.2, roughness: 0.8 });
+            const redMat = new THREE.MeshPhysicalMaterial({ color: CONFIG.colors.accentRed, metalness: 0.3, roughness: 0.2, clearcoat: 1.0 });
+            const candyMat = new THREE.MeshStandardMaterial({ map: caneTexture, roughness: 0.4 });
+            for (let i = 0; i < CONFIG.particles.count; i++) {
+                const rand = Math.random(); let mesh, type;
+                if (rand < 0.40) { mesh = new THREE.Mesh(boxGeo, greenMat); type = 'BOX'; } 
+                else if (rand < 0.70) { mesh = new THREE.Mesh(boxGeo, goldMat); type = 'GOLD_BOX'; } 
+                else if (rand < 0.92) { mesh = new THREE.Mesh(sphereGeo, goldMat); type = 'GOLD_SPHERE'; } 
+                else if (rand < 0.97) { mesh = new THREE.Mesh(sphereGeo, redMat); type = 'RED'; } 
+                else { mesh = new THREE.Mesh(candyGeo, candyMat); type = 'CANE'; }
+                const s = 0.4 + Math.random() * 0.5; mesh.scale.set(s,s,s); mesh.rotation.set(Math.random()*6, Math.random()*6, Math.random()*6);
+                mainGroup.add(mesh); particleSystem.push(new Particle(mesh, type, false));
+            }
+            mainGroup.add(photoMeshGroup);
+        }
+
+        function createDust() {
+            const geo = new THREE.TetrahedronGeometry(0.08, 0); const mat = new THREE.MeshBasicMaterial({ color: 0xffeebb, transparent: true, opacity: 0.8 });
+            for(let i=0; i<CONFIG.particles.dustCount; i++) {
+                 const mesh = new THREE.Mesh(geo, mat); mesh.scale.setScalar(0.5 + Math.random());
+                 mainGroup.add(mesh); particleSystem.push(new Particle(mesh, 'DUST', true));
+            }
+        }
+
+        function addPhotoToScene(texture) {
+            const frameGeo = new THREE.BoxGeometry(1.4, 1.4, 0.05); const frameMat = new THREE.MeshStandardMaterial({ color: CONFIG.colors.champagneGold, metalness: 1.0 });
+            const frame = new THREE.Mesh(frameGeo, frameMat);
+            const photoGeo = new THREE.PlaneGeometry(1.2, 1.2); const photoMat = new THREE.MeshBasicMaterial({ map: texture });
+            const photo = new THREE.Mesh(photoGeo, photoMat); photo.position.z = 0.04;
+            const group = new THREE.Group(); group.add(frame); group.add(photo);
+            group.scale.set(0.8, 0.8, 0.8); photoMeshGroup.add(group);
+            const p = new Particle(group, 'PHOTO', false); particleSystem.push(p); photoParticles.push(p); 
+        }
+        
+        function loadMyPhotos() {
+            const loader = new THREE.TextureLoader(); loader.setCrossOrigin('anonymous'); 
+            myImages.forEach(path => { loader.load(path, (texture) => { texture.colorSpace = THREE.SRGBColorSpace; addPhotoToScene(texture); }); });
+        }
+
+        async function initMediaPipe() {
+            video = document.getElementById('webcam');
+            webcamCanvas = document.getElementById('webcam-preview'); webcamCtx = webcamCanvas.getContext('2d');
+            webcamCanvas.width = 160; webcamCanvas.height = 120;
+            const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+            handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`, delegate: "GPU" },
+                runningMode: "VIDEO", numHands: 1
+            });
+            if (navigator.mediaDevices?.getUserMedia) {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream; video.addEventListener("loadeddata", predictWebcam);
+            }
+        }
+
+        let lastVideoTime = -1;
+        async function predictWebcam() {
+            if (video.currentTime !== lastVideoTime) {
+                lastVideoTime = video.currentTime;
+                if (handLandmarker) {
+                    const result = handLandmarker.detectForVideo(video, performance.now());
+                    webcamCtx.clearRect(0, 0, webcamCanvas.width, webcamCanvas.height);
+                    webcamCtx.save(); webcamCtx.scale(-1, 1); webcamCtx.translate(-webcamCanvas.width, 0);
+                    webcamCtx.drawImage(video, 0, 0, webcamCanvas.width, webcamCanvas.height); webcamCtx.restore();
+                    processGestures(result);
+                }
+            }
+            requestAnimationFrame(predictWebcam);
+        }
+
+        function processGestures(result) {
+            const statusEl = document.getElementById('status-display');
+            const indicatorEl = document.getElementById('selected-indicator');
+            if (result.landmarks && result.landmarks.length > 0) {
+                document.getElementById('webcam-wrapper').classList.add('active');
+                STATE.hand.detected = true;
+                const lm = result.landmarks[0];
+                STATE.hand.x = (lm[9].x - 0.5) * 2; STATE.hand.y = (lm[9].y - 0.5) * 2;
+                const isOpen = (i) => lm[i].y < lm[i-2].y;
+                const count = [8,12,16,20].filter(i => isOpen(i)).length;
+                const isThumbHeart = Math.hypot(lm[4].x-lm[8].x, lm[4].y-lm[8].y) < 0.04 && !isOpen(12);
+                let det = 'TREE'; 
+                if(isThumbHeart) { det = 'HEART'; statusEl.innerText = "🫰 Mưa tim"; indicatorEl.innerText = ""; }
+                else if(count >= 4) { det = 'EXPLODE'; statusEl.innerText = "🖐 Pháo hoa"; indicatorEl.innerText = ""; handRot = (0.5-lm[9].x)*6; }
+                else if(count === 2 && isOpen(8) && isOpen(12)) {
+                    det = 'PHOTO'; statusEl.innerText = "✌️ Xem ảnh";
+                    selectedIndex = Math.floor((1 - lm[8].x) * 5.9) % 5;
+                    if(selectedIndex < 0) selectedIndex = 0; if(selectedIndex > 4) selectedIndex = 4;
+                    indicatorEl.innerText = `Ảnh số: ${selectedIndex + 1}`;
+                } else { statusEl.innerText = "✊ Cây thông"; indicatorEl.innerText = ""; }
+                if(det === pendingState) { 
+                    holdCount++; if(holdCount > 5) STATE.mode = (det === 'PHOTO') ? 'PHOTO' : (det === 'EXPLODE' ? 'SCATTER' : (det === 'HEART' ? 'PHOTO' : 'TREE'));
+                } else { pendingState = det; holdCount = 0; }
+            } else { STATE.hand.detected = false; statusEl.innerText = "Không thấy tay..."; indicatorEl.innerText = ""; }
+        }
+
+        function setupEvents() {
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            // --- LOGIC MỞ THƯ ---
+            const modal = document.getElementById('letter-modal');
+            const btnLetter = document.getElementById('btnLetter');
+            const note = document.getElementById('letter-note');
+            
+            // Click nút để mở
+            btnLetter.onclick = () => {
+                modal.classList.add('active');
+                btnLetter.classList.add('clicked'); // Tắt rung lắc
+                if(note) note.style.display = 'none'; // Ẩn lời nhắn
+                
+                // Hiệu ứng hiện chữ từng dòng (Staggered Animation)
+                const lines = document.querySelectorAll('.anim-line');
+                lines.forEach((line, index) => {
+                    line.classList.remove('visible'); // Reset
+                    setTimeout(() => {
+                        line.classList.add('visible');
+                    }, 500 + (index * 1200)); 
+                });
+            };
+            
+            // Đóng thư
+            document.querySelector('.letter-close').onclick = () => modal.classList.remove('active');
+            modal.onclick = (e) => { if(e.target===modal) modal.classList.remove('active'); }
+            
+            document.getElementById('btnCamToggle').onclick = () => {
+                const el = document.getElementById('camera-preview'); el.style.opacity = el.style.opacity === '0' ? '0.7' : '0';
+            };
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            if (STATE.mode === 'PHOTO' && photoParticles.length > 0) STATE.focusTarget = photoParticles[selectedIndex].mesh;
+            if (STATE.mode === 'SCATTER' && STATE.hand.detected) {
+                const targetRotY = STATE.hand.x * Math.PI * 0.9; const targetRotX = STATE.hand.y * Math.PI * 0.25;
+                STATE.rotation.y += (targetRotY - STATE.rotation.y) * 3.0 * dt; STATE.rotation.x += (targetRotX - STATE.rotation.x) * 3.0 * dt;
+            } else {
+                if(STATE.mode === 'TREE') { STATE.rotation.y += 0.3 * dt; STATE.rotation.x += (0 - STATE.rotation.x) * 2.0 * dt; } 
+                else { STATE.rotation.y += 0.1 * dt; }
+            }
+            mainGroup.rotation.y = STATE.rotation.y; mainGroup.rotation.x = STATE.rotation.x;
+            if(starMesh) {
+                starMesh.visible = (STATE.mode === 'TREE');
+                if(starMesh.visible) {
+                    starMesh.rotation.y += 1.5 * dt; starMesh.rotation.z = Math.sin(clock.elapsedTime)*0.1;
+                    if(starGlow) starGlow.material.opacity = 0.3 + 0.1 * Math.sin(clock.elapsedTime*3);
+                }
+            }
+            const snowPos = groupSnow.geometry.attributes.position.array;
+            for(let i=1; i<snowPos.length; i+=3) { snowPos[i] -= 0.5; if(snowPos[i] < -30) snowPos[i] = 30; }
+            groupSnow.geometry.attributes.position.needsUpdate = true;
+            if (pendingState === 'HEART' || STATE.mode === 'PHOTO') {
+                groupRainHearts.material.opacity = THREE.MathUtils.lerp(groupRainHearts.material.opacity, 0.8, dt * 2);
+                const heartPos = groupRainHearts.geometry.attributes.position.array;
+                for(let i=1; i<heartPos.length; i+=3) { heartPos[i] -= 0.8; if(heartPos[i] < -30) heartPos[i] = 30; }
+                groupRainHearts.geometry.attributes.position.needsUpdate = true;
+            } else { groupRainHearts.material.opacity = THREE.MathUtils.lerp(groupRainHearts.material.opacity, 0, dt * 5); }
+            particleSystem.forEach(p => p.update(dt, STATE.mode, STATE.focusTarget));
+            composer.render();
+        }
+
+        init();
+    </script>
+</body>
+</html>
