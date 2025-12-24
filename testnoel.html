@@ -17,7 +17,7 @@
             z-index: 10; pointer-events: none;
             display: flex; flex-direction: column; 
             align-items: center; justify-content: space-between;
-            padding: 20px; box-sizing: border-box; /* Giảm padding cho mobile */
+            padding: 20px; box-sizing: border-box; 
         }
 
         /* Start Screen */
@@ -37,30 +37,30 @@
         }
         #btn-start:hover { background: #d4af37; color: #000; box-shadow: 0 0 40px rgba(212, 175, 55, 0.8); }
 
-        /* Guide Box - Thu nhỏ cho mobile */
+        /* Guide Box */
         .guide-box {
             background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(212, 175, 55, 0.3);
             padding: 15px; border-radius: 8px; color: #fceea7;
-            text-align: left; pointer-events: none; margin-bottom: 60px; /* Đẩy lên cao hơn nút điều khiển */
+            text-align: left; pointer-events: none; margin-bottom: 60px;
             backdrop-filter: blur(2px);
         }
         .guide-item { margin: 5px 0; font-size: 14px; display: flex; align-items: center; gap: 8px; font-style: italic; }
 
-        /* --- WEBCAM STYLE VIDEO CALL --- */
+        /* --- WEBCAM STYLE VIDEO CALL (Fixed for Mobile) --- */
         #webcam-wrapper {
             position: absolute; 
             top: 15px; right: 15px; 
-            width: 120px; /* Kích thước mobile */
-            height: auto; aspect-ratio: 4/3; /* Giữ tỷ lệ khung hình */
-            border: 2px solid rgba(255, 255, 255, 0.8); /* Viền sáng như frame video call */
-            border-radius: 15px; /* Bo tròn góc */
+            width: 100px; /* Nhỏ gọn cho mobile */
+            height: 133px; /* Tỷ lệ 4:3 */
+            border: 2px solid rgba(255, 255, 255, 0.8); 
+            border-radius: 12px;
             overflow: hidden; 
             opacity: 0; transition: opacity 0.5s; z-index: 100; pointer-events: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); /* Đổ bóng nổi */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             background: #000;
         }
         #webcam-wrapper.active { opacity: 1; }
-        #webcam-preview { width: 100%; height: 100%; object-fit: cover; } /* Full khung */
+        #webcam-preview { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); } /* Lật gương ở đây */
         
         .status-text {
             color: rgba(255,255,255,0.7); font-size: 14px; margin-top: 5px; 
@@ -70,7 +70,7 @@
             color: #d4af37; font-weight: bold; font-size: 16px; margin-top: 5px; height: 20px;
         }
 
-        /* Controls Buttons (Left Side) */
+        /* Controls Buttons */
         .control-group {
             position: absolute; top: 15px; left: 15px; z-index: 200;
             display: flex; flex-direction: column; gap: 12px;
@@ -85,7 +85,7 @@
             transition: all 0.3s; pointer-events: auto;
         }
         
-        /* --- BUTTON THƯ & HIỆU ỨNG RUNG --- */
+        /* Button Thư & Hiệu ứng rung */
         @keyframes shake-notify {
             0% { transform: rotate(0deg) scale(1); }
             10% { transform: rotate(15deg) scale(1.1); }
@@ -97,22 +97,18 @@
         }
 
         #btnLetter {
-            background: rgba(200, 0, 0, 0.8);
-            color: white;
+            background: rgba(200, 0, 0, 0.8); color: white;
             border: 2px solid rgba(255,255,255,0.5);
             animation: shake-notify 2s infinite ease-in-out;
             position: relative;
         }
-        
         #btnLetter::after {
-            content: "1";
-            position: absolute; top: -2px; right: -2px;
+            content: "1"; position: absolute; top: -2px; right: -2px;
             background: red; color: white; width: 18px; height: 18px;
             border-radius: 50%; font-size: 12px; font-weight: bold;
             display: flex; align-items: center; justify-content: center;
             border: 1px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5); z-index: 10;
         }
-        
         #btnLetter.clicked { animation: none; background: rgba(0, 0, 0, 0.6); color: #d4af37; }
         #btnLetter.clicked::after { display: none; }
 
@@ -133,14 +129,13 @@
         }
         @keyframes float-note { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
 
-        /* --- LETTER MODAL STYLES (MOBILE OPTIMIZED) --- */
+        /* --- LETTER MODAL (Mobile Optimized) --- */
         #letter-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 300;
             display: flex; justify-content: center; align-items: center;
             opacity: 0; visibility: hidden; transition: all 0.5s ease;
-            backdrop-filter: blur(8px);
-            padding: 20px; box-sizing: border-box; /* Padding an toàn cho màn hình nhỏ */
+            backdrop-filter: blur(8px); padding: 20px; box-sizing: border-box;
         }
         #letter-modal.active { opacity: 1; visibility: visible; }
         
@@ -148,15 +143,8 @@
             background: #fffdf5;
             background-image: radial-gradient(#d4af37 0.5px, transparent 0.5px);
             background-size: 15px 15px;
-            
-            /* --- KÍCH THƯỚC CHO MOBILE --- */
-            width: 100%; 
-            max-width: 360px; /* Giới hạn chiều ngang hợp lý cho điện thoại */
-            max-height: 80vh; /* Không vượt quá chiều cao màn hình */
-            overflow-y: auto; /* Cho phép cuộn nếu thư quá dài */
-            
-            padding: 30px 20px; /* Padding gọn hơn */
-            border-radius: 10px; position: relative;
+            width: 100%; max-width: 360px; max-height: 80vh; overflow-y: auto;
+            padding: 30px 20px; border-radius: 10px; position: relative;
             transform: translateY(30px) scale(0.95); 
             transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 0 30px rgba(179, 0, 0, 0.4);
@@ -166,10 +154,8 @@
         #letter-modal.active .letter-content { transform: translateY(0) scale(1); }
         
         .letter-text { 
-            font-size: 17px; /* Chữ vừa vặn đọc trên mobile */
-            color: #2c2c2c; line-height: 1.5; 
-            font-family: 'Patrick Hand', cursive; 
-            position: relative; z-index: 2;
+            font-size: 17px; color: #2c2c2c; line-height: 1.5; 
+            font-family: 'Patrick Hand', cursive; position: relative; z-index: 2;
         }
         
         .anim-line { opacity: 0; transform: translateY(15px); transition: opacity 1s ease, transform 1s ease; margin-bottom: 10px; }
@@ -178,8 +164,7 @@
         .signature {
             text-align: right; margin-top: 20px; 
             font-weight: bold; color: #800000; 
-            font-size: 24px; /* Chữ ký vừa phải */
-            font-family: 'Dancing Script', cursive; 
+            font-size: 24px; font-family: 'Dancing Script', cursive; 
         }
 
         .letter-close { 
@@ -207,9 +192,8 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Media Query cho màn hình lớn hơn một chút */
         @media (min-width: 768px) {
-            #webcam-wrapper { width: 180px; top: 20px; right: 20px; }
+            #webcam-wrapper { width: 180px; height: 135px; top: 20px; right: 20px; }
             .letter-content { max-width: 450px; padding: 40px 30px; }
             .letter-text { font-size: 20px; }
             .guide-item { font-size: 18px; }
@@ -266,7 +250,6 @@
     <div id="letter-modal">
         <div class="letter-content">
             <span class="letter-close">&times;</span>
-            
             <i class="fas fa-holly-berry deco-icon deco-tl"></i> 
             <i class="fas fa-bell deco-icon deco-br"></i> 
             
@@ -285,7 +268,7 @@
     </div>
 
     <div id="webcam-wrapper">
-        <video id="webcam" autoplay playsinline style="display:none;"></video>
+        <video id="webcam" autoplay playsinline muted style="position: absolute; width: 1px; height: 1px; opacity: 0; z-index: -1;"></video>
         <canvas id="webcam-preview"></canvas>
     </div>
 
@@ -525,18 +508,31 @@
             myImages.forEach(path => { loader.load(path, (texture) => { texture.colorSpace = THREE.SRGBColorSpace; addPhotoToScene(texture); }); });
         }
 
+        // --- MEDIA PIPE FIX FOR IOS ---
         async function initMediaPipe() {
             video = document.getElementById('webcam');
             webcamCanvas = document.getElementById('webcam-preview'); webcamCtx = webcamCanvas.getContext('2d');
-            webcamCanvas.width = 160; webcamCanvas.height = 120;
+            
+            // Tối ưu kích thước cho mobile (giảm lag)
+            webcamCanvas.width = 320; 
+            webcamCanvas.height = 240;
+
             const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
             handLandmarker = await HandLandmarker.createFromOptions(vision, {
                 baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`, delegate: "GPU" },
                 runningMode: "VIDEO", numHands: 1
             });
             if (navigator.mediaDevices?.getUserMedia) {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream; video.addEventListener("loadeddata", predictWebcam);
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 360 } },
+                        audio: false 
+                    });
+                    video.srcObject = stream;
+                    video.onloadedmetadata = () => {
+                        video.play().then(() => predictWebcam()).catch(e => console.log("Cần tương tác người dùng cho iOS:", e));
+                    };
+                } catch(e) { console.error("Không thể mở cam:", e); }
             }
         }
 
@@ -546,9 +542,11 @@
                 lastVideoTime = video.currentTime;
                 if (handLandmarker) {
                     const result = handLandmarker.detectForVideo(video, performance.now());
+                    
+                    // Vẽ lại vào canvas (Lật gương đã xử lý bằng CSS scaleX(-1) nên ở đây vẽ thường)
                     webcamCtx.clearRect(0, 0, webcamCanvas.width, webcamCanvas.height);
-                    webcamCtx.save(); webcamCtx.scale(-1, 1); webcamCtx.translate(-webcamCanvas.width, 0);
-                    webcamCtx.drawImage(video, 0, 0, webcamCanvas.width, webcamCanvas.height); webcamCtx.restore();
+                    webcamCtx.drawImage(video, 0, 0, webcamCanvas.width, webcamCanvas.height);
+                    
                     processGestures(result);
                 }
             }
@@ -592,23 +590,18 @@
             const btnLetter = document.getElementById('btnLetter');
             const note = document.getElementById('letter-note');
             
-            // Click nút để mở
             btnLetter.onclick = () => {
                 modal.classList.add('active');
-                btnLetter.classList.add('clicked'); // Tắt rung lắc
-                if(note) note.style.display = 'none'; // Ẩn lời nhắn
+                btnLetter.classList.add('clicked'); 
+                if(note) note.style.display = 'none'; 
                 
-                // Hiệu ứng hiện chữ từng dòng (Staggered Animation)
                 const lines = document.querySelectorAll('.anim-line');
                 lines.forEach((line, index) => {
-                    line.classList.remove('visible'); // Reset
-                    setTimeout(() => {
-                        line.classList.add('visible');
-                    }, 500 + (index * 1200)); 
+                    line.classList.remove('visible'); 
+                    setTimeout(() => line.classList.add('visible'), 500 + (index * 1200)); 
                 });
             };
             
-            // Đóng thư
             document.querySelector('.letter-close').onclick = () => modal.classList.remove('active');
             modal.onclick = (e) => { if(e.target===modal) modal.classList.remove('active'); }
             
